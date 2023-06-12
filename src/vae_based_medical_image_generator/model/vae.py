@@ -15,7 +15,6 @@ class EncoderVAE(nn.Module):
         self.FC_var   = nn.Linear (hidden_dim, latent_dim)
         
         self.LeakyReLU = nn.LeakyReLU(0.2)
-        self.training = True
     
     # Forward pass durch den Encoder -> Bild zu mean und log_var
     def forward(self, x):

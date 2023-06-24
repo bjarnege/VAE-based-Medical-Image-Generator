@@ -4,23 +4,21 @@ import torch.nn as nn
 # Definieren der Encoder Klasse
 class EncoderVAE(nn.Module):
     
-    def __init__(self, input_dim, hidden_dim, latent_dim):
+    def __init__(self, imgChannels, feature_dim, latent_dim):
         super(EncoderVAE, self).__init__()
-
-        self.FC_input = nn.Linear(input_dim, hidden_dim)
-        self.FC_input2 = nn.Linear(hidden_dim, hidden_dim)
-        self.FC_input3 = nn.Linear(hidden_dim, hidden_dim)
-
-        self.FC_mean  = nn.Linear(hidden_dim, latent_dim)
-        self.FC_var   = nn.Linear (hidden_dim, latent_dim)
-        
+        self.encConv = nn.Conv2d(imgChannels, 16, 5)
+        self.encConv2 = nn.Conv2d(16, 32, 5)
+        self.FC_mean  = nn.Linear(feature_dim, latent_dim)
+        self.FC_var   = nn.Linear (feature_dim, latent_dim)
         self.LeakyReLU = nn.LeakyReLU(0.2)
+        self.feature_dim = feature_dim
     
     # Forward pass durch den Encoder -> Bild zu mean und log_var
     def forward(self, x):
-        h_  = self.LeakyReLU(self.FC_input(x))
-        h_  = self.LeakyReLU(self.FC_input2(h_))
-        h_  = self.LeakyReLU(self.FC_input3(h_))
+        h_  = self.LeakyReLU(self.encConv(x))
+        h_  = self.LeakyReLU(self.encConv2(h_))
+        h_ = h_.view(-1, self.feature_dim)
+
         mean = self.FC_mean(h_)
         log_var  = self.FC_var(h_)                     # encoder produces mean and log of variance 
                                                        #             (i.e., parateters of simple tractable normal distribution "q"
@@ -29,22 +27,20 @@ class EncoderVAE(nn.Module):
 
 # Definieren der Decoder-Klasse
 class DecoderVAE(nn.Module):
-    def __init__(self, latent_dim, hidden_dim, output_dim):
+    def __init__(self, imgChannels, feature_dim, latent_dim):
         super(DecoderVAE, self).__init__()
-        self.FC_hidden = nn.Linear(latent_dim, hidden_dim)
-        self.FC_hidden2 = nn.Linear(hidden_dim, hidden_dim)
-        self.FC_hidden3 = nn.Linear(hidden_dim, hidden_dim)
-        self.FC_output = nn.Linear(hidden_dim, output_dim)
-        
+        self.decFC1 = nn.Linear(latent_dim, feature_dim) 
+        self.decConv = nn.ConvTranspose2d(32, 16, 5)
+        self.decConv2 = nn.ConvTranspose2d(16, imgChannels, 5)
         self.LeakyReLU = nn.LeakyReLU(0.2)
         
-    def forward(self, x):
-        # Forward pass durch den Decoder -> latenter z-Vekto zu Bild
-        h = self.LeakyReLU(self.FC_hidden(x))
-        h = self.LeakyReLU(self.FC_hidden2(h))
-        h = self.LeakyReLU(self.FC_hidden3(h))
-              
-        x_hat = torch.sigmoid(self.FC_output(h))
+    def forward(self, z):
+        # Forward pass durch den Decoder -> latenter z-Vektor zu Bild
+        h = self.LeakyReLU(self.decFC1(z))
+        h = h.view(-1, 32, 20, 20)
+        h = self.LeakyReLU(self.decConv(h))
+        x_hat = torch.sigmoid(self.decConv2(h))
+
         return x_hat
 
 # Zusammenführen beider Modelle im VAE
@@ -61,7 +57,6 @@ class VariationalAutoencoder(nn.Module):
         z = mean + var*epsilon                          # reparameterization trick
         return z
         
-                
     def forward(self, x):
         mean, log_var = self.Encoder(x)
         # Samplen der Daten aus Gausverteilung mit mean und var
@@ -69,3 +64,10 @@ class VariationalAutoencoder(nn.Module):
         x_hat            = self.Decoder(z)
         
         return x_hat, mean, log_var
+    
+# define vae loss function that will be optimized
+def vae_loss(x, x_hat, mean, log_var):
+    reproduction_loss = nn.functional.binary_cross_entropy(x_hat, x, reduction='sum')
+    kld_regularizer = - 0.5 * torch.sum(1+ log_var - mean.pow(2) - log_var.exp())
+
+    return reproduction_loss + kld_regularizer

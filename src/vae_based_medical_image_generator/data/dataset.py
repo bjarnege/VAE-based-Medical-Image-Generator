@@ -17,11 +17,18 @@ def load_dataset(dataset_name: str, split: str, download_dataset: bool = True):
     Raises:
         KeyError: If the specified dataset name is not found in the medmnist.INFO dictionary.
     """
-    info = medmnist.INFO[dataset_name]
-    DataClass = getattr(medmnist, info["python_class"])
-
-    return DataClass(split=split,
-                     transform=torchvision.transforms.Compose(
-                         [torchvision.transforms.ToTensor(),
-                          torchvision.transforms.Normalize(mean=[.5], std=[.5])]),
-                     download=download_dataset)
+    if dataset_name == "mnist":
+        return torchvision.datasets.MNIST(root='./data/mnist',
+                                          train=(split == "train"),
+                                          download=download_dataset,
+                                          transform=torchvision.transforms.Compose(
+                                              [torchvision.transforms.ToTensor(),
+                                               torchvision.transforms.Normalize(mean=[0.5], std=[0.5])]))
+    elif dataset_name in medmnist.INFO:
+        info = medmnist.INFO[dataset_name]
+        DataClass = getattr(medmnist, info["python_class"])
+        transform = torchvision.transforms.Compose(
+            [torchvision.transforms.ToTensor(), torchvision.transforms.Normalize(mean=[0.5], std=[0.5])])
+        return DataClass(split=split, transform=transform, download=download_dataset)
+    else:
+        raise ValueError(f"Invalid dataset name: {dataset_name}")

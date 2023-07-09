@@ -15,11 +15,18 @@ torchaudio = "^2.0.2"
 medmnist = "^2.2.2"
 matplotlib = "^3.7.1"
 plotly = "^5.15.0"
-
+ipywidgets = "^8.0.6"
+tensorboard = "^2.13.0"
+ray = {extras = ["tune"], version = "^2.5.1"}
+torchviz = "^0.0.2"
+hiddenlayer = "^0.3"
 
 [tool.poetry.group.dev.dependencies]
 yapf = "^0.33.0"
 ipykernel = "^6.23.1"
+
+[tool.yapf]
+COLUMN_LIMIT = 140
 
 [build-system]
 requires = ["poetry-core"]

@@ -32,13 +32,13 @@ class ConditionalVariationalAutoencoder(nn.Module):
             nn.LeakyReLU(negative_slope=0.2),
             nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=1),
             nn.LeakyReLU(negative_slope=0.2),
-            nn.Flatten(),
-        )
-
+            nn.Flatten()
+            )
+        
         hidden_dimension = self.get_encoder_hidden_dimension(image_channels)
-
-        self.mean_fc = nn.Linear(hidden_dimension + n_labels, latent_dimension)
-        self.log_variance_fc = nn.Linear(hidden_dimension + n_labels, latent_dimension)
+        self.linear = nn.Linear(hidden_dimension + n_labels, 1028)
+        self.mean_fc = nn.Linear(1028 , latent_dimension)
+        self.log_variance_fc = nn.Linear(1028, latent_dimension)
 
         self.decoder = nn.Sequential(
             nn.Linear(latent_dimension + n_labels, hidden_dimension),
@@ -103,8 +103,7 @@ class ConditionalVariationalAutoencoder(nn.Module):
             latent distribution, and the log variance of the learned latent distribution.
         """
         hidden = self.encoder(x)
-        hidden_with_labels = torch.cat([hidden, c], 1)
-
+        hidden_with_labels = self.linear(torch.cat([hidden, c], 1))
         mean, log_variance = self.mean_fc(hidden_with_labels), self.log_variance_fc(hidden_with_labels)
         sampled_latent_variable = self.reparameterization(mean, log_variance)
         sampled_latent_variable_with_labels = torch.cat([sampled_latent_variable, c], 1)

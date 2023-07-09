@@ -240,11 +240,6 @@ def main(args):
 
 
 if __name__ == '__main__':
-    # For debugging purposes
-    import os
-    os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-    print(os.getpid())
-
     parser = argparse.ArgumentParser(description='Train a VAE or CVAE on the MedMNIST dataset.')
 
     parser.add_argument('--model',
@@ -260,7 +255,7 @@ if __name__ == '__main__':
                         type=str,
                         choices=[
                             'pathmnist', 'chestmnist', 'dermamnist', 'octmnist', 'pneumoniamnist', 'retinamnist', 'breastmnist',
-                            'bloodmnist', 'tissuemnist', 'organamnist', 'organcmnist', 'organsmnist'
+                            'bloodmnist', 'tissuemnist', 'organamnist', 'organcmnist', 'organsmnist', "mnist"
                         ],
                         default='chestmnist',
                         help='Choose a dataset to train on (default: chestmnist)')

@@ -21,6 +21,7 @@ to install virtualenv in the project folder for better ide support
 Then install all dependencies:
 
 ```bash
+sudo apt-get install graphviz
 poetry install
 ```
 
